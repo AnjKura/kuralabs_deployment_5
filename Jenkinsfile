@@ -42,7 +42,19 @@ pipeline {
                     }
                 }
             }
-        
+           stage ('Push to Dockerhub'){
+                agent{label 'Docker-agent'}
+                steps {
+                withCredentials([string(credentialsId: 'dockerusername', variable: 'dockerusername'),
+                                    string(credentialsId: 'dockerpassword', variable: 'dockerpassword')]) {
+                    sh '''#!/bin/bash
+                    sudo curl https://github.com/AnjKura/kuralabs_deployment_5.git  > dockerfile
+                    sudo docker login --username=${dockerusername} --password=${dockerpasssword}
+                    sudo docker push anjpkura/url_shortener:latest
+                    '''
+                    }
+                }
+            }
             stage ('Terraform_Init'){
                 agent{label 'terraform_agent'}
                 steps {
@@ -56,26 +68,37 @@ pipeline {
             }
 
             stage ('Terraform_Plan'){
-                agent{label 'terraform_agent'}
+                agent{label 'Terraform-Agent'}
                 steps {
                     withCredentials([string(credentialsId: 'AWS_ACCESS_KEY', variable: 'aws_access_key'),
                                     string(credentialsId: 'AWS_SECRET_KEY', variable: 'aws_secret_key')]) {
                                         dir('intTerraform') {
-                                        sh 'terraform plan -out plan.tfplan -var="aws_access_key=${aws_access_key}" -var="aws_secret_key=${aws_secret_key}"' 
+                                        sh 'terraform plan' 
                                         }
                     }
                 }
             }
             
             stage ('Terraform_Apply'){
-                agent{label 'terraform_agent'}
+                agent{label 'Terraform-Agent'}
                 steps {
                     withCredentials([string(credentialsId: 'AWS_ACCESS_KEY', variable: 'aws_access_key'),
                                     string(credentialsId: 'AWS_SECRET_KEY', variable: 'aws_secret_key')]) {
                                         dir('intTerraform') {
-                                        sh 'terraform apply plan.tfplan' 
+                                        sh 'terraform apply' 
                                         }
                     }
+                }
+            }
+             stage ('Deploy to ECS'){
+                agent{label 'Terraform-Agent'}
+                steps {
+                    withCredentials([string(credentialsId: 'AWS_ACCESS_KEY', variable: 'aws_access_key'),
+                                    string(credentialsId: 'AWS_SECRET_KEY', variable: 'aws_secret_key')]) {
+                                        dir('intTerraform') {
+                                        sh 'terraform deploy' 
+                                        }
+                   }
                 }
             }
 
