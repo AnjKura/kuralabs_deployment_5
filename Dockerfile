@@ -2,11 +2,11 @@ FROM python:latest
 
 RUN apt update 
 RUN apt -y install git
-RUN sleep 3
+RUN sleep 5
 RUN apt -y install python3-pip
-RUN sleep 3
+RUN sleep 5
 RUN git clone https://github.com/AnjKura/kuralabs_deployment_5.git
-RUN sleep 2
+RUN sleep 5
 WORKDIR /kuralabs_deployment_5/
 RUN pip install -r requirements.txt
 RUN pip install gunicorn
